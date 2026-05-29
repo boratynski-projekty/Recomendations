@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import MobileMenu from "@/components/MobileMenu";
 
 export const metadata: Metadata = {
   title: "Recomendations",
@@ -39,22 +40,32 @@ export default async function RootLayout({
             <nav className="flex items-center gap-3 text-sm">
               {user ? (
                 <>
-                  <Link href="/dashboard" className="text-muted hover:text-white">
+                  <Link
+                    href="/dashboard"
+                    className="hidden text-muted hover:text-white sm:inline"
+                  >
                     Moje listy
                   </Link>
                   {profileSlug && (
                     <Link
                       href={`/u/${profileSlug}`}
-                      className="text-muted hover:text-white"
+                      className="hidden text-muted hover:text-white sm:inline"
                     >
                       Mój profil
                     </Link>
                   )}
-                  <form action="/auth/signout" method="post">
+                  <Link
+                    href="/settings"
+                    className="hidden text-muted hover:text-white sm:inline"
+                  >
+                    Ustawienia
+                  </Link>
+                  <form action="/auth/signout" method="post" className="hidden sm:block">
                     <button type="submit" className="btn">
                       Wyloguj
                     </button>
                   </form>
+                  <MobileMenu profileSlug={profileSlug} />
                 </>
               ) : (
                 <Link href="/login" className="btn-primary">
@@ -64,7 +75,7 @@ export default async function RootLayout({
             </nav>
           </div>
         </header>
-        <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+        <main className="mx-auto max-w-5xl px-4 py-6 pb-24 sm:py-8 sm:pb-8">{children}</main>
       </body>
     </html>
   );

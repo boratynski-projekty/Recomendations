@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/format";
+import Avatar from "@/components/Avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -29,17 +30,12 @@ export default async function ProfilePage({
   return (
     <div>
       <header className="mb-8 flex items-center gap-4">
-        {profile.avatar_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={profile.avatar_url}
-            alt=""
-            className="h-14 w-14 rounded-full border border-border"
-          />
-        )}
-        <div>
-          <h1 className="text-2xl font-bold">{profile.display_name}</h1>
-          <p className="text-sm text-muted">/u/{profile.slug}</p>
+        <Avatar url={profile.avatar_url} name={profile.display_name} size="lg" />
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-bold sm:text-2xl">
+            {profile.display_name}
+          </h1>
+          <p className="break-all text-xs text-muted sm:text-sm">/u/{profile.slug}</p>
         </div>
       </header>
 

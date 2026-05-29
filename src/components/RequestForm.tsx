@@ -4,7 +4,13 @@ import { useState, useTransition } from "react";
 import { createRequest } from "@/app/actions";
 import { extractYoutubeId, fetchYoutubeMeta } from "@/lib/youtube";
 
-export default function RequestForm({ listId }: { listId: string }) {
+export default function RequestForm({
+  listId,
+  onSubmitted
+}: {
+  listId: string;
+  onSubmitted?: () => void;
+}) {
   const [url, setUrl] = useState("");
   const [artist, setArtist] = useState("");
   const [title, setTitle] = useState("");
@@ -46,6 +52,7 @@ export default function RequestForm({ listId }: { listId: string }) {
       setArtist("");
       setTitle("");
       setComment("");
+      onSubmitted?.();
     });
   }
 

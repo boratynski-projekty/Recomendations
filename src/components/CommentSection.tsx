@@ -4,13 +4,18 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { addComment, deleteComment } from "@/app/actions";
 import { formatRelative } from "@/lib/format";
+import Avatar from "./Avatar";
 
 export type CommentItem = {
   id: string;
   body: string;
   created_at: string;
   user_id: string;
-  author: { slug: string; display_name: string } | null;
+  author: {
+    slug: string;
+    display_name: string;
+    avatar_url: string | null;
+  } | null;
   can_delete: boolean;
 };
 
@@ -52,50 +57,59 @@ export default function CommentSection({
       {comments.length > 0 && (
         <ul className="mb-3 grid gap-2">
           {comments.map((c) => (
-            <li key={c.id} className="rounded-lg bg-bg p-2 text-sm">
-              <div className="mb-0.5 flex items-center justify-between gap-2 text-xs text-muted">
-                <span>
-                  {c.author ? (
-                    <Link
-                      href={`/u/${c.author.slug}`}
-                      className="hover:text-white"
-                    >
-                      {c.author.display_name}
-                    </Link>
-                  ) : (
-                    "Nieznany"
-                  )}{" "}
-                  · {formatRelative(c.created_at)}
-                </span>
-                {c.can_delete && (
-                  <button
-                    type="button"
-                    onClick={() => onDelete(c.id)}
-                    className="text-muted hover:text-red-300"
-                    aria-label="Usuń komentarz"
-                  >
-                    ✕
-                  </button>
-                )}
+            <li key={c.id} className="flex gap-3 rounded-lg bg-bg p-3 text-sm">
+              <div className="pt-0.5">
+                <Avatar
+                  url={c.author?.avatar_url ?? null}
+                  name={c.author?.display_name ?? "?"}
+                  size="md"
+                />
               </div>
-              <p className="whitespace-pre-wrap text-white/90">{c.body}</p>
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 flex items-center justify-between gap-2 text-xs text-muted">
+                  <span className="truncate">
+                    {c.author ? (
+                      <Link
+                        href={`/u/${c.author.slug}`}
+                        className="font-medium text-white hover:text-accent"
+                      >
+                        {c.author.display_name}
+                      </Link>
+                    ) : (
+                      "Nieznany"
+                    )}
+                    <span className="ml-2">{formatRelative(c.created_at)}</span>
+                  </span>
+                  {c.can_delete && (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(c.id)}
+                      className="flex-shrink-0 text-muted hover:text-red-300"
+                      aria-label="Usuń komentarz"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+                <p className="whitespace-pre-wrap text-white/90">{c.body}</p>
+              </div>
             </li>
           ))}
         </ul>
       )}
       {canComment ? (
-        <form onSubmit={onSubmit} className="flex gap-2">
+        <form onSubmit={onSubmit} className="flex flex-col gap-2 sm:flex-row">
           <input
             value={body}
             onChange={(e) => setBody(e.target.value)}
             maxLength={400}
             placeholder="Dodaj komentarz…"
-            className="input !py-1 !text-xs"
+            className="input flex-1 !py-1.5 !text-sm"
           />
           <button
             type="submit"
             disabled={pending || !body.trim()}
-            className="btn !py-1 !text-xs"
+            className="btn !py-1.5 !text-sm"
           >
             Wyślij
           </button>

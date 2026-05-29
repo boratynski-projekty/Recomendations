@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import RequestsView, { type RequestRow } from "@/components/RequestsView";
 import RequestForm from "@/components/RequestForm";
+import MobileAddRequest from "@/components/MobileAddRequest";
 
 export const dynamic = "force-dynamic";
 
@@ -35,14 +36,14 @@ export default async function ListPage({
     data: { user }
   } = await supabase.auth.getUser();
 
-  // 4) Requesty z liczbą głosów
+  // 4) Requesty z liczbami głosów i komentarzy
   const { data: requests } = await supabase
     .from("requests_with_counts")
     .select("*")
     .eq("list_id", list.id)
     .order("created_at", { ascending: false });
 
-  // 5) Dane autorów dla wszystkich requestów
+  // 5) Dane autorów
   const authorIds = Array.from(new Set((requests ?? []).map((r) => r.created_by)));
   const { data: authors } = authorIds.length
     ? await supabase
@@ -50,10 +51,9 @@ export default async function ListPage({
         .select("id, slug, display_name, avatar_url")
         .in("id", authorIds)
     : { data: [] };
-
   const authorMap = new Map((authors ?? []).map((a) => [a.id, a]));
 
-  // 6) Moje głosy (na które requesty z tej listy oddałem głos)
+  // 6) Moje głosy
   let myVotes: Set<string> = new Set();
   if (user && requests && requests.length) {
     const { data: votes } = await supabase
@@ -67,32 +67,10 @@ export default async function ListPage({
     myVotes = new Set((votes ?? []).map((v) => v.request_id));
   }
 
-  // 7) Komentarze
-  const { data: comments } = requests && requests.length
-    ? await supabase
-        .from("comments")
-        .select("id, request_id, user_id, body, created_at")
-        .in(
-          "request_id",
-          requests.map((r) => r.id)
-        )
-        .order("created_at", { ascending: true })
-    : { data: [] };
-
-  // Profile komentujących
-  const commenterIds = Array.from(new Set((comments ?? []).map((c) => c.user_id)));
-  const { data: commenters } = commenterIds.length
-    ? await supabase
-        .from("profiles")
-        .select("id, slug, display_name")
-        .in("id", commenterIds)
-    : { data: [] };
-  const commenterMap = new Map((commenters ?? []).map((c) => [c.id, c]));
-
   const isOwner = !!user && user.id === list.owner_id;
   const isLoggedIn = !!user;
+  const basePath = `/u/${profile.slug}/${list.slug}`;
 
-  // Zbuduj rows do widoku
   const rows: RequestRow[] = (requests ?? []).map((r) => ({
     id: r.id,
     artist: r.artist,
@@ -105,44 +83,40 @@ export default async function ListPage({
     created_at: r.created_at,
     created_by: r.created_by,
     vote_count: r.vote_count,
+    comment_count: r.comment_count,
     author: authorMap.get(r.created_by) ?? null,
     has_my_vote: myVotes.has(r.id),
-    can_vote: isLoggedIn && user!.id !== r.created_by && r.completed_at === null,
-    comments: (comments ?? [])
-      .filter((c) => c.request_id === r.id)
-      .map((c) => ({
-        id: c.id,
-        body: c.body,
-        created_at: c.created_at,
-        user_id: c.user_id,
-        author: commenterMap.get(c.user_id) ?? null,
-        can_delete:
-          !!user && (user.id === c.user_id || user.id === list.owner_id)
-      }))
+    can_vote: isLoggedIn && user!.id !== r.created_by && r.completed_at === null
   }));
 
   return (
-    <div className="grid gap-8 md:grid-cols-[1fr_320px]">
+    <div className="grid gap-6 md:grid-cols-[1fr_320px] md:gap-8">
       <section>
         <header className="mb-6">
           <p className="text-xs text-muted">
             <Link href={`/u/${profile.slug}`} className="hover:text-accent">
               {profile.display_name}
             </Link>
-            {" · "}
-            /u/{profile.slug}/{list.slug}
+            <span className="mx-1">·</span>
+            <span className="break-all">/u/{profile.slug}/{list.slug}</span>
           </p>
-          <h1 className="mt-1 text-3xl font-bold">{list.title}</h1>
+          <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{list.title}</h1>
           {list.description && (
-            <p className="mt-2 text-muted">{list.description}</p>
+            <p className="mt-2 text-sm text-muted sm:text-base">{list.description}</p>
           )}
         </header>
 
-        <RequestsView rows={rows} isOwner={isOwner} isLoggedIn={isLoggedIn} />
+        <RequestsView
+          rows={rows}
+          isOwner={isOwner}
+          isLoggedIn={isLoggedIn}
+          basePath={basePath}
+        />
       </section>
 
-      <aside>
-        <div className="card p-5">
+      {/* Sidebar (desktop) */}
+      <aside className="hidden md:block">
+        <div className="card sticky top-4 p-5">
           <h2 className="mb-3 text-lg font-semibold">Dodaj rekomendację</h2>
           {isLoggedIn ? (
             <RequestForm listId={list.id} />
@@ -156,6 +130,9 @@ export default async function ListPage({
           )}
         </div>
       </aside>
+
+      {/* Mobile FAB + drawer */}
+      <MobileAddRequest listId={list.id} isLoggedIn={isLoggedIn} />
     </div>
   );
 }

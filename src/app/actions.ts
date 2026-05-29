@@ -221,3 +221,105 @@ export async function deleteComment(commentId: string) {
   revalidatePath("/", "layout");
   return { ok: true };
 }
+
+// =====================================================================
+// PROFILE — edycja display_name / slug / avatar
+// =====================================================================
+const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+
+export async function updateProfile(formData: FormData) {
+  const { supabase, userId } = await requireUser();
+
+  const displayName = ((formData.get("display_name") as string) || "").trim();
+  const newSlugRaw = ((formData.get("slug") as string) || "").trim();
+  const file = formData.get("avatar") as File | null;
+
+  if (!displayName) return { error: "Podaj wyświetlaną nazwę." };
+  if (displayName.length > 60) return { error: "Nazwa za długa (max 60 znaków)." };
+
+  // Bieżący profil — slug porównujemy
+  const { data: current } = await supabase
+    .from("profiles")
+    .select("slug")
+    .eq("id", userId)
+    .single();
+  if (!current) return { error: "Brak profilu — zaloguj się ponownie." };
+
+  // Slug
+  let newSlug: string | undefined;
+  if (newSlugRaw && newSlugRaw !== current.slug) {
+    const normalized = normalizeSlug(newSlugRaw);
+    if (!isValidSlug(normalized)) {
+      return { error: "Niepoprawny slug. Tylko a-z, 0-9, myślniki (2-48 znaków)." };
+    }
+    const { data: taken } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("slug", normalized)
+      .neq("id", userId)
+      .maybeSingle();
+    if (taken) return { error: "Ten adres profilu jest już zajęty." };
+    newSlug = normalized;
+  }
+
+  // Avatar
+  let avatarUrl: string | undefined;
+  if (file && typeof file !== "string" && file.size > 0) {
+    if (file.size > AVATAR_MAX_BYTES) {
+      return { error: "Avatar nie może być większy niż 2 MB." };
+    }
+    if (!AVATAR_TYPES.includes(file.type)) {
+      return { error: "Avatar musi być JPG, PNG lub WebP." };
+    }
+    const ext =
+      file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+    const path = `${userId}/avatar.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (uploadError) {
+      return { error: `Błąd uploadu: ${uploadError.message}` };
+    }
+
+    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+    avatarUrl = `${pub.publicUrl}?v=${Date.now()}`;
+  }
+
+  const update: Record<string, string> = { display_name: displayName };
+  if (newSlug) update.slug = newSlug;
+  if (avatarUrl) update.avatar_url = avatarUrl;
+
+  const { error } = await supabase.from("profiles").update(update).eq("id", userId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/", "layout");
+  return { ok: true, newSlug };
+}
+
+export async function deleteAvatar() {
+  const { supabase, userId } = await requireUser();
+
+  // Wyczyść folder usera w bucket avatars
+  const { data: files } = await supabase.storage.from("avatars").list(userId);
+  if (files && files.length > 0) {
+    const paths = files.map((f) => `${userId}/${f.name}`);
+    const { error: removeError } = await supabase.storage
+      .from("avatars")
+      .remove(paths);
+    if (removeError) {
+      return { error: `Nie udało się usunąć pliku: ${removeError.message}` };
+    }
+  }
+
+  // Wyczyść URL w profilu
+  const { error } = await supabase
+    .from("profiles")
+    .update({ avatar_url: null })
+    .eq("id", userId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
