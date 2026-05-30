@@ -11,13 +11,13 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     const supabase = createClient();
-    const site =
-      process.env.NEXT_PUBLIC_SITE_URL ??
-      (typeof window !== "undefined" ? window.location.origin : "");
+    // Zawsze używaj aktualnego origin przeglądarki — działa na localhost,
+    // prod URL Vercela i preview deployach bez konfigurowania env var.
+    const origin = window.location.origin;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${site}/auth/callback`
+        redirectTo: `${origin}/auth/callback`
       }
     });
     if (error) {
