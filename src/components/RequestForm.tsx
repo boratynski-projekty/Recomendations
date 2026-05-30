@@ -44,7 +44,7 @@ export default function RequestForm({
     formData.set("comment", comment);
     startTransition(async () => {
       const res = await createRequest(formData);
-      if (res && "error" in res) {
+      if (res?.error) {
         setError(res.error);
         return;
       }

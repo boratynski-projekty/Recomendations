@@ -26,7 +26,7 @@ export default function VoteButton({
     setCount((c) => c + (nextVoted ? 1 : -1));
     startTransition(async () => {
       const res = await toggleVote(requestId);
-      if (res && "error" in res) {
+      if (res?.error) {
         // Rollback
         setVoted(!nextVoted);
         setCount((c) => c + (nextVoted ? -1 : 1));

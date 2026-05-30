@@ -23,7 +23,7 @@ export default function OwnerControls({
     if (!confirm("Na pewno usunąć tę pozycję?")) return;
     startTransition(async () => {
       const res = await deleteRequest(requestId);
-      if (res && "error" in res) setError(res.error);
+      if (res?.error) setError(res.error);
     });
   }
 
@@ -31,7 +31,7 @@ export default function OwnerControls({
     setError(null);
     startTransition(async () => {
       const res = await markRequestCompleted(requestId, completionUrl);
-      if (res && "error" in res) setError(res.error);
+      if (res?.error) setError(res.error);
       else {
         setShowCompleteForm(false);
         setCompletionUrl("");
@@ -42,7 +42,7 @@ export default function OwnerControls({
   function onUnmark() {
     startTransition(async () => {
       const res = await unmarkRequestCompleted(requestId);
-      if (res && "error" in res) setError(res.error);
+      if (res?.error) setError(res.error);
     });
   }
 

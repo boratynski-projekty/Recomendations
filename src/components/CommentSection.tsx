@@ -40,7 +40,7 @@ export default function CommentSection({
     fd.set("body", body);
     startTransition(async () => {
       const res = await addComment(fd);
-      if (res && "error" in res) setError(res.error);
+      if (res?.error) setError(res.error);
       else setBody("");
     });
   }

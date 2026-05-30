@@ -28,7 +28,7 @@ export default function SettingsForm({
     setOk(false);
     startTransition(async () => {
       const res = await deleteAvatar();
-      if (res && "error" in res && res.error) {
+      if (res?.error) {
         setError(res.error);
         return;
       }
@@ -65,7 +65,7 @@ export default function SettingsForm({
     const fd = new FormData(e.currentTarget);
     startTransition(async () => {
       const res = await updateProfile(fd);
-      if (res && "error" in res && res.error) {
+      if (res?.error) {
         setError(res.error);
         return;
       }

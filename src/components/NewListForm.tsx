@@ -11,7 +11,7 @@ export default function NewListForm() {
     setError(null);
     startTransition(async () => {
       const res = await createList(formData);
-      if (res && "error" in res) setError(res.error);
+      if (res?.error) setError(res.error);
     });
   }
 
