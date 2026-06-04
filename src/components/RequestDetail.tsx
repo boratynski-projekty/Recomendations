@@ -126,27 +126,16 @@ export default function RequestDetail({
           </a>
         )}
 
-        {isOwner && (
-          <div className="mt-4">
-            <OwnerControls
-              requestId={request.id}
-              isCompleted={!!request.completed_at}
-            />
-          </div>
-        )}
-
-        {isAuthor && !isOwner && (
+        {(isOwner || isAuthor) && (
           <div className="mt-4 flex flex-wrap gap-2">
-            {canEditByAuthor && (
-              <button
-                type="button"
-                onClick={() => setEditOpen(true)}
-                className="btn !py-1 !text-xs"
-              >
-                Edit request
-              </button>
-            )}
-            {canEditByAuthor && (
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              className="btn !py-1 !text-xs"
+            >
+              ✎ Edit request
+            </button>
+            {isAuthor && !isOwner && canEditByAuthor && (
               <button
                 type="button"
                 onClick={onAuthorDelete}
@@ -156,12 +145,23 @@ export default function RequestDetail({
                 Delete
               </button>
             )}
-            {!canEditByAuthor && (
-              <p className="text-xs text-muted">
-                Editing is locked once your request gets a vote or is marked as done.
-              </p>
-            )}
           </div>
+        )}
+
+        {isOwner && (
+          <div className="mt-3">
+            <OwnerControls
+              requestId={request.id}
+              isCompleted={!!request.completed_at}
+            />
+          </div>
+        )}
+
+        {isAuthor && !isOwner && !canEditByAuthor && (
+          <p className="mt-4 text-xs text-muted">
+            Delete is locked once someone votes on your request — but you can
+            still edit the title, artist and comment.
+          </p>
         )}
 
         <h2 className="mt-6 mb-1 text-sm font-semibold uppercase tracking-wide text-muted">

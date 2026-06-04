@@ -83,8 +83,7 @@ export default function EditRequestModal({
         </div>
 
         <p className="mb-3 text-xs text-muted">
-          You can only edit your own requests until someone votes on them. The
-          YouTube link can't be changed — delete and re-add if needed.
+          The YouTube link can&apos;t be changed — delete and re-add if needed.
         </p>
 
         <label className="mb-3 block">
