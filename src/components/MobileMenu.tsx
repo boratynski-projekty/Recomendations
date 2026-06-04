@@ -37,8 +37,14 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-bg sm:hidden">
-          <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-3">
+        <div
+          className="fixed inset-0 z-50 flex flex-col sm:hidden"
+          style={{ backgroundColor: "#0b0b10" }}
+        >
+          <div
+            className="flex items-center justify-between border-b border-border px-4 py-3"
+            style={{ backgroundColor: "#15151d" }}
+          >
             <span className="text-lg font-bold tracking-tight">
               <span className="text-accent">REQUEST</span>ube
             </span>
@@ -52,7 +58,10 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
             </button>
           </div>
 
-          <nav className="flex flex-1 flex-col">
+          <nav
+            className="flex flex-1 flex-col overflow-y-auto"
+            style={{ backgroundColor: "#0b0b10" }}
+          >
             <Link
               href="/dashboard"
               onClick={close}
@@ -97,9 +106,15 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
             </Link>
           </nav>
 
-          <div className="border-t border-border bg-surface p-5">
+          <div
+            className="border-t border-border p-5"
+            style={{ backgroundColor: "#15151d" }}
+          >
             <form action="/auth/signout" method="post">
-              <button type="submit" className="btn w-full justify-center !py-3 !text-base">
+              <button
+                type="submit"
+                className="btn w-full justify-center !py-3 !text-base"
+              >
                 Sign out
               </button>
             </form>
