@@ -8,9 +8,11 @@ import type { CommentItem } from "@/components/CommentSection";
 export const dynamic = "force-dynamic";
 
 export default async function RequestDetailPage({
-  params
+  params,
+  searchParams
 }: {
   params: { userSlug: string; listSlug: string; requestId: string };
+  searchParams?: { duplicate?: string };
 }) {
   const supabase = createClient();
 
@@ -90,6 +92,7 @@ export default async function RequestDetailPage({
     !!user && user.id !== request.created_by && request.completed_at === null;
 
   const backHref = `/u/${profile.slug}/${list.slug}`;
+  const isDuplicate = searchParams?.duplicate === "1";
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -99,6 +102,19 @@ export default async function RequestDetailPage({
       >
         ← Back to &ldquo;{list.title}&rdquo;
       </Link>
+
+      {isDuplicate && (
+        <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
+          <p className="font-semibold">
+            ⚠ Not added — this video is already on the list.
+          </p>
+          <p className="mt-1 text-amber-200/90">
+            {request.completed_at
+              ? "It has already been completed — you can watch the reaction below."
+              : "Here's the existing entry. Vote, comment, or just check it out."}
+          </p>
+        </div>
+      )}
 
       <RequestDetail
         request={{

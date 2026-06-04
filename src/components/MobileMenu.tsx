@@ -23,27 +23,71 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
 
   return (
     <>
+      {/* Hamburger — widoczny tylko poniżej 640px (mobile) */}
       <button
         type="button"
         aria-label="Open menu"
         onClick={() => setOpen(true)}
-        className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-white sm:hidden"
+        className="mobile-menu-trigger"
       >
-        <span className="flex flex-col gap-[3px]">
-          <span className="block h-[2px] w-4 bg-white" />
-          <span className="block h-[2px] w-4 bg-white" />
-          <span className="block h-[2px] w-4 bg-white" />
+        <span aria-hidden="true" className="mobile-menu-bars">
+          <span />
+          <span />
+          <span />
         </span>
       </button>
 
+      <style>{`
+        .mobile-menu-trigger {
+          display: none;
+          align-items: center;
+          justify-content: center;
+          height: 36px;
+          width: 36px;
+          border: 1px solid #24242f;
+          border-radius: 8px;
+          background-color: #15151d;
+          color: #fff;
+        }
+        .mobile-menu-bars {
+          display: inline-flex;
+          flex-direction: column;
+          gap: 3px;
+        }
+        .mobile-menu-bars > span {
+          display: block;
+          height: 2px;
+          width: 16px;
+          background-color: #fff;
+        }
+        @media (max-width: 639.98px) {
+          .mobile-menu-trigger { display: inline-flex; }
+        }
+      `}</style>
+
       {open && (
         <div
-          className="fixed inset-0 z-50 flex flex-col sm:hidden"
-          style={{ backgroundColor: "#0b0b10" }}
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 60,
+            display: "flex",
+            flexDirection: "column",
+            backgroundColor: "#0b0b10",
+            backdropFilter: "none"
+          }}
         >
           <div
-            className="flex items-center justify-between border-b border-border px-4 py-3"
-            style={{ backgroundColor: "#15151d" }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              borderBottom: "1px solid #24242f",
+              backgroundColor: "#15151d",
+              padding: "12px 16px"
+            }}
           >
             <span className="text-lg font-bold tracking-tight">
               <span className="text-accent">REQUEST</span>ube
@@ -51,64 +95,69 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
             <button
               type="button"
               onClick={close}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-2xl text-white"
               aria-label="Close menu"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: 36,
+                width: 36,
+                border: "1px solid #24242f",
+                borderRadius: 8,
+                color: "#fff",
+                fontSize: 20,
+                backgroundColor: "transparent"
+              }}
             >
               ✕
             </button>
           </div>
 
           <nav
-            className="flex flex-1 flex-col overflow-y-auto"
-            style={{ backgroundColor: "#0b0b10" }}
+            style={{
+              display: "flex",
+              flex: 1,
+              flexDirection: "column",
+              backgroundColor: "#0b0b10",
+              overflowY: "auto"
+            }}
           >
-            <Link
-              href="/dashboard"
-              onClick={close}
-              className="flex items-center justify-between border-b border-border px-5 py-4 text-lg text-white active:bg-surface"
-            >
-              <span>My lists</span>
-              <span className="text-muted">→</span>
-            </Link>
-            <Link
-              href="/my-requests"
-              onClick={close}
-              className="flex items-center justify-between border-b border-border px-5 py-4 text-lg text-white active:bg-surface"
-            >
-              <span>My requests</span>
-              <span className="text-muted">→</span>
-            </Link>
-            {profileSlug && (
+            {(
+              [
+                ["/dashboard", "My lists"],
+                ["/my-requests", "My requests"],
+                profileSlug ? [`/u/${profileSlug}`, "My profile"] : null,
+                ["/settings", "Settings"],
+                ["/contact", "Contact"]
+              ].filter(Boolean) as [string, string][]
+            ).map(([href, label]) => (
               <Link
-                href={`/u/${profileSlug}`}
+                key={href}
+                href={href}
                 onClick={close}
-                className="flex items-center justify-between border-b border-border px-5 py-4 text-lg text-white active:bg-surface"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  borderBottom: "1px solid #24242f",
+                  padding: "16px 20px",
+                  fontSize: 18,
+                  color: "#fff",
+                  backgroundColor: "#0b0b10"
+                }}
               >
-                <span>My profile</span>
-                <span className="text-muted">→</span>
+                <span>{label}</span>
+                <span style={{ color: "#9ca3af" }}>→</span>
               </Link>
-            )}
-            <Link
-              href="/settings"
-              onClick={close}
-              className="flex items-center justify-between border-b border-border px-5 py-4 text-lg text-white active:bg-surface"
-            >
-              <span>Settings</span>
-              <span className="text-muted">→</span>
-            </Link>
-            <Link
-              href="/contact"
-              onClick={close}
-              className="flex items-center justify-between border-b border-border px-5 py-4 text-lg text-white active:bg-surface"
-            >
-              <span>Contact</span>
-              <span className="text-muted">→</span>
-            </Link>
+            ))}
           </nav>
 
           <div
-            className="border-t border-border p-5"
-            style={{ backgroundColor: "#15151d" }}
+            style={{
+              borderTop: "1px solid #24242f",
+              backgroundColor: "#15151d",
+              padding: 20
+            }}
           >
             <form action="/auth/signout" method="post">
               <button

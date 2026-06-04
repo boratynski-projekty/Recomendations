@@ -50,9 +50,11 @@ export default function RequestForm({
     startTransition(async () => {
       const res = await createRequest(formData);
       if (res?.error) {
-        // Duplicate handling — redirect to existing request
+        // Duplicate handling — redirect to existing request with flag.
+        // Detail page picks ?duplicate=1 up and renders a banner.
         if (res.duplicateRequestId) {
-          router.push(`${basePath}/r/${res.duplicateRequestId}`);
+          onSubmitted?.();
+          router.push(`${basePath}/r/${res.duplicateRequestId}?duplicate=1`);
           return;
         }
         setError(res.error);
