@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import RequestsView, { type RequestRow } from "@/components/RequestsView";
 import RequestForm from "@/components/RequestForm";
 import MobileAddRequest from "@/components/MobileAddRequest";
+import ListHeaderActions from "@/components/ListHeaderActions";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,6 @@ export default async function ListPage({
 }) {
   const supabase = createClient();
 
-  // 1) Profil ownera
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, slug, display_name, avatar_url")
@@ -22,7 +22,6 @@ export default async function ListPage({
     .maybeSingle();
   if (!profile) notFound();
 
-  // 2) Lista
   const { data: list } = await supabase
     .from("lists")
     .select("id, slug, title, description, owner_id, created_at")
@@ -31,19 +30,16 @@ export default async function ListPage({
     .maybeSingle();
   if (!list) notFound();
 
-  // 3) Bieżący użytkownik
   const {
     data: { user }
   } = await supabase.auth.getUser();
 
-  // 4) Requesty z liczbami głosów i komentarzy
   const { data: requests } = await supabase
     .from("requests_with_counts")
     .select("*")
     .eq("list_id", list.id)
     .order("created_at", { ascending: false });
 
-  // 5) Dane autorów
   const authorIds = Array.from(new Set((requests ?? []).map((r) => r.created_by)));
   const { data: authors } = authorIds.length
     ? await supabase
@@ -53,18 +49,27 @@ export default async function ListPage({
     : { data: [] };
   const authorMap = new Map((authors ?? []).map((a) => [a.id, a]));
 
-  // 6) Moje głosy
   let myVotes: Set<string> = new Set();
-  if (user && requests && requests.length) {
-    const { data: votes } = await supabase
-      .from("votes")
-      .select("request_id")
+  let isFavorited = false;
+  if (user) {
+    if (requests && requests.length) {
+      const { data: votes } = await supabase
+        .from("votes")
+        .select("request_id")
+        .eq("user_id", user.id)
+        .in(
+          "request_id",
+          requests.map((r) => r.id)
+        );
+      myVotes = new Set((votes ?? []).map((v) => v.request_id));
+    }
+    const { data: fav } = await supabase
+      .from("list_favorites")
+      .select("list_id")
       .eq("user_id", user.id)
-      .in(
-        "request_id",
-        requests.map((r) => r.id)
-      );
-    myVotes = new Set((votes ?? []).map((v) => v.request_id));
+      .eq("list_id", list.id)
+      .maybeSingle();
+    isFavorited = !!fav;
   }
 
   const isOwner = !!user && user.id === list.owner_id;
@@ -100,7 +105,20 @@ export default async function ListPage({
             <span className="mx-1">·</span>
             <span className="break-all">/u/{profile.slug}/{list.slug}</span>
           </p>
-          <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{list.title}</h1>
+          <div className="mt-1 flex items-start justify-between gap-3">
+            <h1 className="text-2xl font-bold sm:text-3xl">{list.title}</h1>
+            <ListHeaderActions
+              list={{
+                id: list.id,
+                slug: list.slug,
+                title: list.title,
+                description: list.description
+              }}
+              isOwner={isOwner}
+              isLoggedIn={isLoggedIn}
+              initialFavorited={isFavorited}
+            />
+          </div>
           {list.description && (
             <p className="mt-2 text-sm text-muted sm:text-base">{list.description}</p>
           )}
@@ -114,25 +132,27 @@ export default async function ListPage({
         />
       </section>
 
-      {/* Sidebar (desktop) */}
       <aside className="hidden md:block">
         <div className="card sticky top-4 p-5">
-          <h2 className="mb-3 text-lg font-semibold">Dodaj rekomendację</h2>
+          <h2 className="mb-3 text-lg font-semibold">Add a request</h2>
           {isLoggedIn ? (
-            <RequestForm listId={list.id} />
+            <RequestForm listId={list.id} basePath={basePath} />
           ) : (
             <p className="text-sm text-muted">
               <Link href="/login" className="text-accent hover:underline">
-                Zaloguj się
+                Sign in
               </Link>{" "}
-              by dodać swój request.
+              to submit a request.
             </p>
           )}
         </div>
       </aside>
 
-      {/* Mobile FAB + drawer */}
-      <MobileAddRequest listId={list.id} isLoggedIn={isLoggedIn} />
+      <MobileAddRequest
+        listId={list.id}
+        basePath={basePath}
+        isLoggedIn={isLoggedIn}
+      />
     </div>
   );
 }

@@ -39,9 +39,9 @@ export default async function ProfilePage({
         </div>
       </header>
 
-      <h2 className="mb-3 text-lg font-semibold">Listy</h2>
+      <h2 className="mb-3 text-lg font-semibold">Lists</h2>
       {!lists || lists.length === 0 ? (
-        <p className="text-muted">Ten użytkownik jeszcze nie ma żadnych list.</p>
+        <p className="text-muted">This user has no lists yet.</p>
       ) : (
         <ul className="grid gap-3 md:grid-cols-2">
           {lists.map((l) => (
@@ -56,7 +56,7 @@ export default async function ProfilePage({
                 <p className="mt-1 text-sm text-muted">{l.description}</p>
               )}
               <p className="mt-2 text-xs text-muted">
-                założona {formatDate(l.created_at)}
+                created {formatDate(l.created_at)}
               </p>
             </li>
           ))}

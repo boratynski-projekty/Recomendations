@@ -14,7 +14,6 @@ export default async function RequestDetailPage({
 }) {
   const supabase = createClient();
 
-  // Profil ownera + lista — do walidacji że request należy do tej listy
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, slug, display_name")
@@ -44,7 +43,6 @@ export default async function RequestDetailPage({
     .eq("id", request.created_by)
     .maybeSingle();
 
-  // Bieżący user — do voted + can_vote + komentarz delete rights
   const {
     data: { user }
   } = await supabase.auth.getUser();
@@ -60,7 +58,6 @@ export default async function RequestDetailPage({
     hasMyVote = !!v;
   }
 
-  // Komentarze + autorzy
   const { data: rawComments } = await supabase
     .from("comments")
     .select("id, user_id, body, created_at")
@@ -86,6 +83,9 @@ export default async function RequestDetailPage({
   }));
 
   const isOwner = !!user && user.id === list.owner_id;
+  const isAuthor = !!user && user.id === request.created_by;
+  const canEditByAuthor =
+    isAuthor && request.completed_at === null && request.vote_count === 0;
   const canVote =
     !!user && user.id !== request.created_by && request.completed_at === null;
 
@@ -97,7 +97,7 @@ export default async function RequestDetailPage({
         href={backHref}
         className="mb-4 inline-flex items-center gap-1 text-sm text-muted hover:text-white"
       >
-        ← Wróć do listy „{list.title}"
+        ← Back to &ldquo;{list.title}&rdquo;
       </Link>
 
       <RequestDetail
@@ -124,11 +124,14 @@ export default async function RequestDetailPage({
         }}
         comments={comments}
         isOwner={isOwner}
+        isAuthor={isAuthor}
+        canEditByAuthor={canEditByAuthor}
         isLoggedIn={!!user}
+        backHref={backHref}
       />
 
       <p className="mt-6 text-xs text-muted">
-        Dodano {formatRelative(request.created_at)}
+        Submitted {formatRelative(request.created_at)}
       </p>
     </div>
   );

@@ -6,9 +6,11 @@ import RequestForm from "./RequestForm";
 
 export default function MobileAddRequest({
   listId,
+  basePath,
   isLoggedIn
 }: {
   listId: string;
+  basePath: string;
   isLoggedIn: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -29,7 +31,7 @@ export default function MobileAddRequest({
         className="fixed bottom-4 right-4 z-30 flex items-center gap-2 rounded-full border border-accent bg-accent px-5 py-3 font-semibold text-black shadow-lg shadow-black/40 md:hidden"
       >
         <span className="text-lg leading-none">＋</span>
-        <span>Dodaj rekomendację</span>
+        <span>Add request</span>
       </button>
 
       {open && (
@@ -42,24 +44,28 @@ export default function MobileAddRequest({
             className="max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border-t border-border bg-surface p-5"
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Dodaj rekomendację</h2>
+              <h2 className="text-lg font-semibold">Add a request</h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 className="text-2xl text-muted"
-                aria-label="Zamknij"
+                aria-label="Close"
               >
                 ✕
               </button>
             </div>
             {isLoggedIn ? (
-              <RequestForm listId={listId} onSubmitted={() => setOpen(false)} />
+              <RequestForm
+                listId={listId}
+                basePath={basePath}
+                onSubmitted={() => setOpen(false)}
+              />
             ) : (
               <p className="text-sm text-muted">
                 <Link href="/login" className="text-accent hover:underline">
-                  Zaloguj się
+                  Sign in
                 </Link>{" "}
-                by dodać swój request.
+                to submit a request.
               </p>
             )}
           </div>

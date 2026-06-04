@@ -1,16 +1,21 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { createRequest } from "@/app/actions";
 import { extractYoutubeId, fetchYoutubeMeta } from "@/lib/youtube";
 
 export default function RequestForm({
   listId,
+  basePath,
   onSubmitted
 }: {
   listId: string;
+  /** np. /u/jan/list-x — używane do redirectu przy duplikacie */
+  basePath: string;
   onSubmitted?: () => void;
 }) {
+  const router = useRouter();
   const [url, setUrl] = useState("");
   const [artist, setArtist] = useState("");
   const [title, setTitle] = useState("");
@@ -34,7 +39,7 @@ export default function RequestForm({
   async function onSubmit(formData: FormData) {
     setError(null);
     if (!extractYoutubeId(url)) {
-      setError("Wklej poprawny link YouTube.");
+      setError("Paste a valid YouTube link.");
       return;
     }
     formData.set("listId", listId);
@@ -45,6 +50,11 @@ export default function RequestForm({
     startTransition(async () => {
       const res = await createRequest(formData);
       if (res?.error) {
+        // Duplicate handling — redirect to existing request
+        if (res.duplicateRequestId) {
+          router.push(`${basePath}/r/${res.duplicateRequestId}`);
+          return;
+        }
         setError(res.error);
         return;
       }
@@ -59,7 +69,7 @@ export default function RequestForm({
   return (
     <form action={onSubmit} className="grid gap-3">
       <div>
-        <label className="mb-1 block text-xs font-medium text-muted">Link YouTube *</label>
+        <label className="mb-1 block text-xs font-medium text-muted">YouTube link *</label>
         <input
           value={url}
           onChange={(e) => setUrl(e.target.value)}
@@ -69,11 +79,11 @@ export default function RequestForm({
           className="input"
         />
         {fetching && (
-          <p className="mt-1 text-[11px] text-muted">Pobieram tytuł z YouTube…</p>
+          <p className="mt-1 text-[11px] text-muted">Fetching title from YouTube…</p>
         )}
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-muted">Artysta *</label>
+        <label className="mb-1 block text-xs font-medium text-muted">Artist *</label>
         <input
           value={artist}
           onChange={(e) => setArtist(e.target.value)}
@@ -83,7 +93,7 @@ export default function RequestForm({
         />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-muted">Tytuł *</label>
+        <label className="mb-1 block text-xs font-medium text-muted">Title *</label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -93,18 +103,18 @@ export default function RequestForm({
         />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-muted">Komentarz</label>
+        <label className="mb-1 block text-xs font-medium text-muted">Comment</label>
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           rows={2}
           maxLength={400}
-          placeholder="Dlaczego polecasz?"
+          placeholder="Why are you recommending this?"
           className="input"
         />
       </div>
       <button type="submit" className="btn-primary justify-center" disabled={pending}>
-        {pending ? "Dodaję…" : "Dodaj do listy"}
+        {pending ? "Adding…" : "Add to list"}
       </button>
       {error && (
         <p className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">

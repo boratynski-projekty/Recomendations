@@ -23,7 +23,7 @@ export default function SettingsForm({
   const fileInput = useRef<HTMLInputElement>(null);
 
   function onRemoveAvatar() {
-    if (!confirm("Usunąć avatar? Wróci domyślny inicjał.")) return;
+    if (!confirm("Remove your avatar? The default initial will be shown.")) return;
     setError(null);
     setOk(false);
     startTransition(async () => {
@@ -43,12 +43,12 @@ export default function SettingsForm({
     const f = e.target.files?.[0];
     if (!f) return;
     if (f.size > 2 * 1024 * 1024) {
-      setError("Plik większy niż 2 MB.");
+      setError("File larger than 2 MB.");
       e.target.value = "";
       return;
     }
     if (!["image/jpeg", "image/png", "image/webp"].includes(f.type)) {
-      setError("Wybierz JPG, PNG lub WebP.");
+      setError("Pick a JPG, PNG or WebP image.");
       e.target.value = "";
       return;
     }
@@ -70,7 +70,6 @@ export default function SettingsForm({
         return;
       }
       setOk(true);
-      // Jeśli slug się zmienił — przekieruj do nowego profilu
       const newSlug = (res as { newSlug?: string }).newSlug;
       if (newSlug) {
         router.push(`/u/${newSlug}`);
@@ -112,7 +111,7 @@ export default function SettingsForm({
                 onClick={() => fileInput.current?.click()}
                 className="btn"
               >
-                {preview ? "Zmień plik" : "Wybierz plik"}
+                {preview ? "Change file" : "Pick a file"}
               </button>
               {preview && (
                 <button
@@ -121,7 +120,7 @@ export default function SettingsForm({
                   disabled={pending}
                   className="btn !text-red-300 hover:!border-red-400"
                 >
-                  Usuń avatar
+                  Remove avatar
                 </button>
               )}
             </div>
@@ -132,11 +131,11 @@ export default function SettingsForm({
 
       <div className="card p-5">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-          Dane podstawowe
+          Basic info
         </h2>
         <label className="mb-3 block">
           <span className="mb-1 block text-xs font-medium text-muted">
-            Wyświetlana nazwa
+            Display name
           </span>
           <input
             name="display_name"
@@ -149,7 +148,7 @@ export default function SettingsForm({
         </label>
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-muted">
-            Adres profilu (slug)
+            Profile URL (slug)
           </span>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted">/u/</span>
@@ -164,16 +163,16 @@ export default function SettingsForm({
             />
           </div>
           <p className="mt-1 text-[11px] text-muted">
-            a-z, 0-9, myślniki. Zmiana sluga przekieruje Cię na nowy adres profilu.
+            a-z, 0-9, dashes. Changing the slug redirects you to the new profile URL.
           </p>
         </label>
       </div>
 
       <div className="flex items-center gap-3">
         <button type="submit" className="btn-primary" disabled={pending}>
-          {pending ? "Zapisuję…" : "Zapisz zmiany"}
+          {pending ? "Saving…" : "Save changes"}
         </button>
-        {ok && <span className="text-sm text-green-300">✓ Zapisano</span>}
+        {ok && <span className="text-sm text-green-300">✓ Saved</span>}
       </div>
       {error && (
         <p className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">

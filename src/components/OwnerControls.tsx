@@ -20,7 +20,7 @@ export default function OwnerControls({
   const [pending, startTransition] = useTransition();
 
   function onDelete() {
-    if (!confirm("Na pewno usunąć tę pozycję?")) return;
+    if (!confirm("Delete this request?")) return;
     startTransition(async () => {
       const res = await deleteRequest(requestId);
       if (res?.error) setError(res.error);
@@ -55,7 +55,7 @@ export default function OwnerControls({
           disabled={pending}
           className="btn !py-1 !text-xs"
         >
-          Cofnij realizację
+          Unmark as done
         </button>
         <button
           type="button"
@@ -63,7 +63,7 @@ export default function OwnerControls({
           disabled={pending}
           className="btn !py-1 !text-xs text-red-300 hover:!border-red-400"
         >
-          Usuń
+          Delete
         </button>
         {error && <p className="text-xs text-red-300">{error}</p>}
       </div>
@@ -80,7 +80,7 @@ export default function OwnerControls({
             disabled={pending}
             className="btn !py-1 !text-xs"
           >
-            ✓ Zrealizowane
+            ✓ Mark as done
           </button>
         )}
         <button
@@ -89,7 +89,7 @@ export default function OwnerControls({
           disabled={pending}
           className="btn !py-1 !text-xs text-red-300 hover:!border-red-400"
         >
-          Usuń
+          Delete
         </button>
       </div>
       {showCompleteForm && (
@@ -97,7 +97,7 @@ export default function OwnerControls({
           <input
             value={completionUrl}
             onChange={(e) => setCompletionUrl(e.target.value)}
-            placeholder="Link YouTube do twojej reakcji"
+            placeholder="YouTube link to your reaction"
             className="input !py-1 !text-xs"
           />
           <div className="flex gap-2">
@@ -107,7 +107,7 @@ export default function OwnerControls({
               disabled={pending || !completionUrl}
               className="btn-primary !py-1 !text-xs"
             >
-              Zapisz
+              Save
             </button>
             <button
               type="button"
@@ -115,7 +115,7 @@ export default function OwnerControls({
               disabled={pending}
               className="btn !py-1 !text-xs"
             >
-              Anuluj
+              Cancel
             </button>
           </div>
           {error && <p className="text-xs text-red-300">{error}</p>}

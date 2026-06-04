@@ -17,11 +17,15 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
     };
   }, [open]);
 
+  function close() {
+    setOpen(false);
+  }
+
   return (
     <>
       <button
         type="button"
-        aria-label="Otwórz menu"
+        aria-label="Open menu"
         onClick={() => setOpen(true)}
         className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-white sm:hidden"
       >
@@ -31,53 +35,74 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
           <span className="block h-[2px] w-4 bg-white" />
         </span>
       </button>
+
       {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/70 sm:hidden"
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className="absolute right-0 top-0 h-full w-64 border-l border-border bg-surface p-5"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 z-50 flex flex-col bg-bg sm:hidden">
+          <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-3">
+            <span className="text-lg font-bold tracking-tight">
+              <span className="text-accent">REQUEST</span>ube
+            </span>
             <button
               type="button"
-              onClick={() => setOpen(false)}
-              className="mb-6 text-2xl text-muted"
-              aria-label="Zamknij menu"
+              onClick={close}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-2xl text-white"
+              aria-label="Close menu"
             >
               ✕
             </button>
-            <nav className="grid gap-3 text-base">
+          </div>
+
+          <nav className="flex flex-1 flex-col">
+            <Link
+              href="/dashboard"
+              onClick={close}
+              className="flex items-center justify-between border-b border-border px-5 py-4 text-lg text-white active:bg-surface"
+            >
+              <span>My lists</span>
+              <span className="text-muted">→</span>
+            </Link>
+            <Link
+              href="/my-requests"
+              onClick={close}
+              className="flex items-center justify-between border-b border-border px-5 py-4 text-lg text-white active:bg-surface"
+            >
+              <span>My requests</span>
+              <span className="text-muted">→</span>
+            </Link>
+            {profileSlug && (
               <Link
-                href="/dashboard"
-                onClick={() => setOpen(false)}
-                className="text-white hover:text-accent"
+                href={`/u/${profileSlug}`}
+                onClick={close}
+                className="flex items-center justify-between border-b border-border px-5 py-4 text-lg text-white active:bg-surface"
               >
-                Moje listy
+                <span>My profile</span>
+                <span className="text-muted">→</span>
               </Link>
-              {profileSlug && (
-                <Link
-                  href={`/u/${profileSlug}`}
-                  onClick={() => setOpen(false)}
-                  className="text-white hover:text-accent"
-                >
-                  Mój profil
-                </Link>
-              )}
-              <Link
-                href="/settings"
-                onClick={() => setOpen(false)}
-                className="text-white hover:text-accent"
-              >
-                Ustawienia
-              </Link>
-              <form action="/auth/signout" method="post" className="mt-4">
-                <button type="submit" className="btn w-full justify-center">
-                  Wyloguj
-                </button>
-              </form>
-            </nav>
+            )}
+            <Link
+              href="/settings"
+              onClick={close}
+              className="flex items-center justify-between border-b border-border px-5 py-4 text-lg text-white active:bg-surface"
+            >
+              <span>Settings</span>
+              <span className="text-muted">→</span>
+            </Link>
+            <Link
+              href="/contact"
+              onClick={close}
+              className="flex items-center justify-between border-b border-border px-5 py-4 text-lg text-white active:bg-surface"
+            >
+              <span>Contact</span>
+              <span className="text-muted">→</span>
+            </Link>
+          </nav>
+
+          <div className="border-t border-border bg-surface p-5">
+            <form action="/auth/signout" method="post">
+              <button type="submit" className="btn w-full justify-center !py-3 !text-base">
+                Sign out
+              </button>
+            </form>
           </div>
         </div>
       )}

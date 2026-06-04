@@ -38,7 +38,6 @@ export default function RequestsView({
   rows: RequestRow[];
   isOwner: boolean;
   isLoggedIn: boolean;
-  /** np. `/u/jan/8k2x4p` — używane do budowania linków do detail page */
   basePath: string;
 }) {
   const [tab, setTab] = useState<Tab>("active");
@@ -61,7 +60,7 @@ export default function RequestsView({
         break;
       case "artist":
         copy.sort((a, b) =>
-          a.artist.localeCompare(b.artist, "pl", { sensitivity: "base" })
+          a.artist.localeCompare(b.artist, "en", { sensitivity: "base" })
         );
         break;
       case "votes":
@@ -86,7 +85,7 @@ export default function RequestsView({
               tab === "active" ? "bg-accent text-black" : "text-muted hover:text-white"
             }`}
           >
-            Aktywne ({active.length})
+            Active ({active.length})
           </button>
           <button
             role="tab"
@@ -98,19 +97,19 @@ export default function RequestsView({
                 : "text-muted hover:text-white"
             }`}
           >
-            Zrealizowane ({completed.length})
+            Done ({completed.length})
           </button>
         </div>
         <label className="flex items-center gap-2 text-xs text-muted">
-          Sortuj:
+          Sort:
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortMode)}
             className="input !w-auto !py-1 !text-xs"
           >
-            <option value="votes">Najwięcej głosów</option>
-            <option value="newest">Najnowsze</option>
-            <option value="artist">Artysta (A→Z)</option>
+            <option value="votes">Most votes</option>
+            <option value="newest">Newest</option>
+            <option value="artist">Artist (A→Z)</option>
           </select>
         </label>
       </div>
@@ -118,8 +117,8 @@ export default function RequestsView({
       {sorted.length === 0 ? (
         <div className="card p-8 text-center text-muted">
           {tab === "active"
-            ? "Nic tu jeszcze nie ma. Bądź pierwszy z propozycją!"
-            : "Brak zrealizowanych pozycji."}
+            ? "Nothing here yet. Be the first to submit!"
+            : "No completed requests yet."}
         </div>
       ) : (
         <ul className="grid gap-3">
@@ -140,8 +139,8 @@ export default function RequestsView({
                         type="button"
                         onClick={() => setPlaying(r.youtube_id)}
                         className="group relative flex-shrink-0"
-                        title="Odtwórz w pop-upie"
-                        aria-label="Odtwórz"
+                        title="Play in pop-up"
+                        aria-label="Play"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -163,7 +162,7 @@ export default function RequestsView({
                         </Link>
                         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
                           <span className="inline-flex items-center gap-1">
-                            dodał
+                            by
                             {r.author ? (
                               <Link
                                 href={`/u/${r.author.slug}`}
@@ -186,7 +185,7 @@ export default function RequestsView({
                           <Link
                             href={detailHref}
                             className="hover:text-white"
-                            aria-label={`${r.comment_count} komentarzy`}
+                            aria-label={`${r.comment_count} comments`}
                           >
                             💬 {r.comment_count}
                           </Link>
@@ -201,7 +200,7 @@ export default function RequestsView({
                         rel="noopener noreferrer"
                         className="mt-3 inline-flex items-center gap-2 rounded-lg border border-green-500/40 bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-300 hover:bg-green-500/20"
                       >
-                        ✓ Zrealizowano — zobacz reakcję
+                        ✓ Done — watch the reaction
                       </a>
                     )}
 

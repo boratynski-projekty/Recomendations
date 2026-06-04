@@ -18,39 +18,39 @@ export default function NewListForm() {
   return (
     <form action={onSubmit} className="grid gap-3">
       <div>
-        <label className="mb-1 block text-xs font-medium text-muted">Tytuł listy</label>
+        <label className="mb-1 block text-xs font-medium text-muted">List title</label>
         <input
           name="title"
           required
           maxLength={120}
-          placeholder="np. Reakcje muzyczne 2026"
+          placeholder="e.g. Music reactions 2026"
           className="input"
         />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-muted">Opis (opcjonalny)</label>
+        <label className="mb-1 block text-xs font-medium text-muted">Description (optional)</label>
         <textarea
           name="description"
           rows={2}
           maxLength={400}
-          placeholder="Krótki opis, co tu wrzucać"
+          placeholder="Short description of what to submit"
           className="input"
         />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-muted">Adres (slug)</label>
+        <label className="mb-1 block text-xs font-medium text-muted">URL (slug)</label>
         <input
           name="slug"
-          placeholder="opcjonalny — zostaw puste"
+          placeholder="optional — leave empty for random"
           pattern="[a-z0-9-]*"
           className="input"
         />
         <p className="mt-1 text-[11px] text-muted">
-          a-z, 0-9, myślniki. Możesz zmienić później.
+          a-z, 0-9, dashes. You can change it later.
         </p>
       </div>
       <button type="submit" className="btn-primary justify-center" disabled={pending}>
-        {pending ? "Tworzę…" : "Utwórz listę"}
+        {pending ? "Creating…" : "Create list"}
       </button>
       {error && (
         <p className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">

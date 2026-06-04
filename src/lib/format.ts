@@ -1,6 +1,6 @@
 export function formatDate(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString("pl-PL", {
+  return d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric"
@@ -11,7 +11,7 @@ export function formatRelative(iso: string): string {
   const d = new Date(iso).getTime();
   const now = Date.now();
   const diff = Math.round((d - now) / 1000);
-  const rtf = new Intl.RelativeTimeFormat("pl", { numeric: "auto" });
+  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
   const abs = Math.abs(diff);
   if (abs < 60) return rtf.format(Math.round(diff), "second");
   if (abs < 3600) return rtf.format(Math.round(diff / 60), "minute");

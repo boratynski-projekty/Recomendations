@@ -16,7 +16,7 @@ async function requireUser() {
 }
 
 // =====================================================================
-// LISTY
+// LISTS
 // =====================================================================
 export async function createList(formData: FormData) {
   const { supabase, userId } = await requireUser();
@@ -27,21 +27,19 @@ export async function createList(formData: FormData) {
   const customSlugRaw = (formData.get("slug") as string | null)?.trim() ?? "";
 
   if (!title) {
-    return { error: "Podaj tytuł listy." };
+    return { error: "Please enter a list title." };
   }
 
-  // Slug: jeśli user wpisał — normalizujemy i walidujemy; w przeciwnym razie generujemy.
   let slug: string;
   if (customSlugRaw) {
     slug = normalizeSlug(customSlugRaw);
     if (!isValidSlug(slug)) {
-      return { error: "Niepoprawny slug. Tylko a-z, 0-9, myślniki." };
+      return { error: "Invalid slug. Only a-z, 0-9, dashes." };
     }
   } else {
     slug = randomSlug(6);
   }
 
-  // Sprawdzamy unikalność w obrębie ownera (DB też pilnuje, ale dajemy ładny błąd).
   const { data: existing } = await supabase
     .from("lists")
     .select("id")
@@ -49,7 +47,7 @@ export async function createList(formData: FormData) {
     .eq("slug", slug)
     .maybeSingle();
   if (existing) {
-    return { error: "Masz już listę z takim adresem. Wybierz inny." };
+    return { error: "You already have a list with this URL. Pick another." };
   }
 
   const { data, error } = await supabase
@@ -59,7 +57,7 @@ export async function createList(formData: FormData) {
     .single();
 
   if (error || !data) {
-    return { error: error?.message ?? "Nie udało się utworzyć listy." };
+    return { error: error?.message ?? "Failed to create the list." };
   }
 
   const { data: profile } = await supabase
@@ -69,12 +67,67 @@ export async function createList(formData: FormData) {
     .single();
 
   revalidatePath("/dashboard");
-  if (!profile) {
-    // teoretycznie nie powinno się zdarzyć (trigger), ale awaryjnie wracamy do dashboardu
-    redirect("/dashboard");
-  }
+  if (!profile) redirect("/dashboard");
   revalidatePath(`/u/${profile.slug}`);
   redirect(`/u/${profile.slug}/${data.slug}`);
+}
+
+export async function updateList(formData: FormData) {
+  const { supabase, userId } = await requireUser();
+
+  const listId = (formData.get("listId") as string | null) ?? "";
+  const title = ((formData.get("title") as string) || "").trim();
+  const description =
+    ((formData.get("description") as string) || "").trim() || null;
+  const newSlugRaw = ((formData.get("slug") as string) || "").trim();
+
+  if (!listId) return { error: "Missing list id." };
+  if (!title) return { error: "List title can't be empty." };
+
+  const { data: list } = await supabase
+    .from("lists")
+    .select("id, slug, owner_id")
+    .eq("id", listId)
+    .single();
+  if (!list || list.owner_id !== userId) {
+    return { error: "You don't have permission to edit this list." };
+  }
+
+  let newSlug: string | undefined;
+  if (newSlugRaw && newSlugRaw !== list.slug) {
+    const normalized = normalizeSlug(newSlugRaw);
+    if (!isValidSlug(normalized)) {
+      return { error: "Invalid slug. Only a-z, 0-9, dashes (2-48 chars)." };
+    }
+    const { data: taken } = await supabase
+      .from("lists")
+      .select("id")
+      .eq("owner_id", userId)
+      .eq("slug", normalized)
+      .neq("id", listId)
+      .maybeSingle();
+    if (taken) return { error: "You already have another list with this URL." };
+    newSlug = normalized;
+  }
+
+  const update: Record<string, string | null> = { title, description };
+  if (newSlug) update.slug = newSlug;
+
+  const { error } = await supabase.from("lists").update(update).eq("id", listId);
+  if (error) return { error: error.message };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("slug")
+    .eq("id", userId)
+    .single();
+
+  revalidatePath("/", "layout");
+  return {
+    ok: true,
+    newSlug,
+    profileSlug: profile?.slug ?? null
+  };
 }
 
 export async function deleteList(listId: string) {
@@ -84,14 +137,15 @@ export async function deleteList(listId: string) {
     .select("owner_id")
     .eq("id", listId)
     .single();
-  if (!list || list.owner_id !== userId) return { error: "Brak uprawnień." };
+  if (!list || list.owner_id !== userId) return { error: "Permission denied." };
 
   await supabase.from("lists").delete().eq("id", listId);
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
+  return { ok: true };
 }
 
 // =====================================================================
-// REQUESTY
+// REQUESTS
 // =====================================================================
 export async function createRequest(formData: FormData) {
   const { supabase, userId } = await requireUser();
@@ -103,12 +157,26 @@ export async function createRequest(formData: FormData) {
   const comment = ((formData.get("comment") as string) || "").trim() || null;
 
   if (!listId || !artist || !title || !youtubeUrl) {
-    return { error: "Wypełnij wszystkie wymagane pola." };
+    return { error: "Please fill in all required fields." };
   }
 
   const youtubeId = extractYoutubeId(youtubeUrl);
   if (!youtubeId) {
-    return { error: "Niepoprawny link YouTube." };
+    return { error: "Invalid YouTube link." };
+  }
+
+  // Anti-duplicate check
+  const { data: existing } = await supabase
+    .from("requests")
+    .select("id")
+    .eq("list_id", listId)
+    .eq("youtube_id", youtubeId)
+    .maybeSingle();
+  if (existing) {
+    return {
+      error: "This video is already on the list — opening the existing entry.",
+      duplicateRequestId: existing.id
+    };
   }
 
   const { error } = await supabase.from("requests").insert({
@@ -121,10 +189,45 @@ export async function createRequest(formData: FormData) {
     comment
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    // race condition on unique constraint
+    if (error.code === "23505") {
+      const { data: dup } = await supabase
+        .from("requests")
+        .select("id")
+        .eq("list_id", listId)
+        .eq("youtube_id", youtubeId)
+        .maybeSingle();
+      return {
+        error: "This video is already on the list.",
+        duplicateRequestId: dup?.id
+      };
+    }
+    return { error: error.message };
+  }
 
-  revalidatePath(`/list/${listId}`);
-  // Również publicznie widoczne adresy — odświeżamy szeroko:
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+export async function updateRequest(formData: FormData) {
+  const { supabase } = await requireUser();
+  const requestId = (formData.get("requestId") as string) ?? "";
+  const artist = ((formData.get("artist") as string) || "").trim();
+  const title = ((formData.get("title") as string) || "").trim();
+  const comment = ((formData.get("comment") as string) || "").trim() || null;
+
+  if (!requestId || !artist || !title) {
+    return { error: "Artist and title are required." };
+  }
+
+  // RLS pilnuje uprawnień (autor do pierwszego głosu albo owner listy).
+  const { error } = await supabase
+    .from("requests")
+    .update({ artist, title, comment })
+    .eq("id", requestId);
+
+  if (error) return { error: error.message };
   revalidatePath("/", "layout");
   return { ok: true };
 }
@@ -143,7 +246,7 @@ export async function markRequestCompleted(
 ) {
   const { supabase } = await requireUser();
   if (!extractYoutubeId(completionUrl)) {
-    return { error: "Podaj poprawny link YouTube do filmu reakcji." };
+    return { error: "Provide a valid YouTube link to your reaction." };
   }
   const { error } = await supabase
     .from("requests")
@@ -203,7 +306,7 @@ export async function addComment(formData: FormData) {
   const { supabase, userId } = await requireUser();
   const requestId = formData.get("requestId") as string;
   const body = ((formData.get("body") as string) || "").trim();
-  if (!requestId || !body) return { error: "Pusty komentarz." };
+  if (!requestId || !body) return { error: "Comment can't be empty." };
 
   const { error } = await supabase
     .from("comments")
@@ -223,7 +326,7 @@ export async function deleteComment(commentId: string) {
 }
 
 // =====================================================================
-// PROFILE — edycja display_name / slug / avatar
+// PROFILE
 // =====================================================================
 const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
@@ -235,23 +338,21 @@ export async function updateProfile(formData: FormData) {
   const newSlugRaw = ((formData.get("slug") as string) || "").trim();
   const file = formData.get("avatar") as File | null;
 
-  if (!displayName) return { error: "Podaj wyświetlaną nazwę." };
-  if (displayName.length > 60) return { error: "Nazwa za długa (max 60 znaków)." };
+  if (!displayName) return { error: "Please enter a display name." };
+  if (displayName.length > 60) return { error: "Display name too long (max 60)." };
 
-  // Bieżący profil — slug porównujemy
   const { data: current } = await supabase
     .from("profiles")
     .select("slug")
     .eq("id", userId)
     .single();
-  if (!current) return { error: "Brak profilu — zaloguj się ponownie." };
+  if (!current) return { error: "No profile — please sign in again." };
 
-  // Slug
   let newSlug: string | undefined;
   if (newSlugRaw && newSlugRaw !== current.slug) {
     const normalized = normalizeSlug(newSlugRaw);
     if (!isValidSlug(normalized)) {
-      return { error: "Niepoprawny slug. Tylko a-z, 0-9, myślniki (2-48 znaków)." };
+      return { error: "Invalid slug. Only a-z, 0-9, dashes (2-48 chars)." };
     }
     const { data: taken } = await supabase
       .from("profiles")
@@ -259,18 +360,17 @@ export async function updateProfile(formData: FormData) {
       .eq("slug", normalized)
       .neq("id", userId)
       .maybeSingle();
-    if (taken) return { error: "Ten adres profilu jest już zajęty." };
+    if (taken) return { error: "This profile URL is already taken." };
     newSlug = normalized;
   }
 
-  // Avatar
   let avatarUrl: string | undefined;
   if (file && typeof file !== "string" && file.size > 0) {
     if (file.size > AVATAR_MAX_BYTES) {
-      return { error: "Avatar nie może być większy niż 2 MB." };
+      return { error: "Avatar can't be larger than 2 MB." };
     }
     if (!AVATAR_TYPES.includes(file.type)) {
-      return { error: "Avatar musi być JPG, PNG lub WebP." };
+      return { error: "Avatar must be JPG, PNG or WebP." };
     }
     const ext =
       file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
@@ -280,7 +380,7 @@ export async function updateProfile(formData: FormData) {
       .from("avatars")
       .upload(path, file, { upsert: true, contentType: file.type });
     if (uploadError) {
-      return { error: `Błąd uploadu: ${uploadError.message}` };
+      return { error: `Upload failed: ${uploadError.message}` };
     }
 
     const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
@@ -301,7 +401,6 @@ export async function updateProfile(formData: FormData) {
 export async function deleteAvatar() {
   const { supabase, userId } = await requireUser();
 
-  // Wyczyść folder usera w bucket avatars
   const { data: files } = await supabase.storage.from("avatars").list(userId);
   if (files && files.length > 0) {
     const paths = files.map((f) => `${userId}/${f.name}`);
@@ -309,11 +408,10 @@ export async function deleteAvatar() {
       .from("avatars")
       .remove(paths);
     if (removeError) {
-      return { error: `Nie udało się usunąć pliku: ${removeError.message}` };
+      return { error: `Failed to remove file: ${removeError.message}` };
     }
   }
 
-  // Wyczyść URL w profilu
   const { error } = await supabase
     .from("profiles")
     .update({ avatar_url: null })
@@ -321,5 +419,73 @@ export async function deleteAvatar() {
   if (error) return { error: error.message };
 
   revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+// =====================================================================
+// FAVORITES
+// =====================================================================
+export async function toggleFavorite(listId: string) {
+  const { supabase, userId } = await requireUser();
+
+  const { data: existing } = await supabase
+    .from("list_favorites")
+    .select("list_id")
+    .eq("list_id", listId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase
+      .from("list_favorites")
+      .delete()
+      .eq("list_id", listId)
+      .eq("user_id", userId);
+    if (error) return { error: error.message };
+  } else {
+    const { error } = await supabase
+      .from("list_favorites")
+      .insert({ list_id: listId, user_id: userId });
+    if (error) return { error: error.message };
+  }
+
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+// =====================================================================
+// FEEDBACK
+// =====================================================================
+export async function submitFeedback(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  const kind = (formData.get("kind") as string) ?? "other";
+  const subject = ((formData.get("subject") as string) || "").trim();
+  const body = ((formData.get("body") as string) || "").trim();
+  const email = ((formData.get("email") as string) || "").trim() || null;
+
+  if (!["bug", "suggestion", "other"].includes(kind)) {
+    return { error: "Invalid feedback type." };
+  }
+  if (!subject) return { error: "Subject is required." };
+  if (!body) return { error: "Message is required." };
+  if (subject.length > 120) return { error: "Subject too long (max 120)." };
+  if (body.length > 4000) return { error: "Message too long (max 4000)." };
+  if (!user && !email) {
+    return { error: "Please provide an email so we can reply." };
+  }
+
+  const { error } = await supabase.from("feedback").insert({
+    user_id: user?.id ?? null,
+    email,
+    kind,
+    subject,
+    body
+  });
+  if (error) return { error: error.message };
+
   return { ok: true };
 }

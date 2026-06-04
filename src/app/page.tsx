@@ -13,39 +13,39 @@ export default async function LandingPage() {
   return (
     <div className="mx-auto max-w-3xl text-center">
       <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
-        Twoja lista <span className="text-accent">rekomendacji</span>
+        Your <span className="text-accent">request</span> list
       </h1>
       <p className="mx-auto mb-8 max-w-xl text-muted">
-        Załóż swoją listę i przyjmuj zgłoszenia od widzów. Oni głosują na
-        propozycje, Ty wybierasz co zrobić na żywo lub na kanale.
+        Create your list and let viewers send you requests. They vote on
+        submissions, you pick what to react to on stream or your channel.
       </p>
       <Link href="/login" className="btn-primary">
-        Zaczynamy — zaloguj przez Google
+        Get started — sign in with Google
       </Link>
 
       <div className="mt-16 grid gap-4 text-left md:grid-cols-3">
         <div className="card p-5">
           <div className="mb-2 text-2xl">📝</div>
-          <h3 className="mb-1 font-semibold">Załóż listę</h3>
+          <h3 className="mb-1 font-semibold">Create a list</h3>
           <p className="text-sm text-muted">
-            Każda lista ma swój adres, który możesz wrzucić na strim lub do
-            opisu filmu.
+            Each list has its own URL you can drop on stream or in a video
+            description.
           </p>
         </div>
         <div className="card p-5">
           <div className="mb-2 text-2xl">🎶</div>
-          <h3 className="mb-1 font-semibold">Widzowie zgłaszają</h3>
+          <h3 className="mb-1 font-semibold">Viewers send requests</h3>
           <p className="text-sm text-muted">
-            Wklejają link do YouTube, dopisują artystę i komentarz. Tytuł
-            uzupełnia się automatycznie.
+            They paste a YouTube link, fill in the artist and a comment.
+            Title autofills from YouTube.
           </p>
         </div>
         <div className="card p-5">
           <div className="mb-2 text-2xl">🏆</div>
-          <h3 className="mb-1 font-semibold">Głosowanie i realizacja</h3>
+          <h3 className="mb-1 font-semibold">Vote and deliver</h3>
           <p className="text-sm text-muted">
-            Społeczność głosuje, Ty wybierasz i oznaczasz pozycję jako
-            zrealizowaną, dodając link do swojej reakcji.
+            The crowd upvotes, you pick what to do and mark it done with a
+            link to your reaction.
           </p>
         </div>
       </div>

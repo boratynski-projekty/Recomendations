@@ -42,9 +42,9 @@ export default function VoteButton({
       title={
         canVote
           ? voted
-            ? "Cofnij głos"
-            : "Zagłosuj"
-          : "Nie możesz głosować na ten request"
+            ? "Remove your vote"
+            : "Vote"
+          : "You can't vote on this request"
       }
       className={`flex min-w-[56px] flex-col items-center justify-center rounded-lg border px-3 py-2 text-sm transition ${
         voted

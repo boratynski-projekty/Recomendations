@@ -21,9 +21,9 @@ export default async function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <h1 className="mb-1 text-2xl font-bold">Ustawienia profilu</h1>
+      <h1 className="mb-1 text-2xl font-bold">Profile settings</h1>
       <p className="mb-6 text-sm text-muted">
-        Twój profil widoczny jest pod adresem{" "}
+        Your public profile is at{" "}
         <span className="text-white">/u/{profile.slug}</span>
       </p>
       <SettingsForm

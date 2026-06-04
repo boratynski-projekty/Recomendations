@@ -46,7 +46,7 @@ export default function CommentSection({
   }
 
   function onDelete(id: string) {
-    if (!confirm("Usunąć komentarz?")) return;
+    if (!confirm("Delete this comment?")) return;
     startTransition(async () => {
       await deleteComment(id);
     });
@@ -76,7 +76,7 @@ export default function CommentSection({
                         {c.author.display_name}
                       </Link>
                     ) : (
-                      "Nieznany"
+                      "Unknown"
                     )}
                     <span className="ml-2">{formatRelative(c.created_at)}</span>
                   </span>
@@ -85,7 +85,7 @@ export default function CommentSection({
                       type="button"
                       onClick={() => onDelete(c.id)}
                       className="flex-shrink-0 text-muted hover:text-red-300"
-                      aria-label="Usuń komentarz"
+                      aria-label="Delete comment"
                     >
                       ✕
                     </button>
@@ -103,7 +103,7 @@ export default function CommentSection({
             value={body}
             onChange={(e) => setBody(e.target.value)}
             maxLength={400}
-            placeholder="Dodaj komentarz…"
+            placeholder="Add a comment…"
             className="input flex-1 !py-1.5 !text-sm"
           />
           <button
@@ -111,11 +111,11 @@ export default function CommentSection({
             disabled={pending || !body.trim()}
             className="btn !py-1.5 !text-sm"
           >
-            Wyślij
+            Send
           </button>
         </form>
       ) : (
-        <p className="text-xs text-muted">Zaloguj się, aby dodać komentarz.</p>
+        <p className="text-xs text-muted">Sign in to add a comment.</p>
       )}
       {error && (
         <p className="mt-2 text-xs text-red-300">{error}</p>

@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useTransition } from "react";
 import VoteButton from "./VoteButton";
 import OwnerControls from "./OwnerControls";
 import CommentSection, { type CommentItem } from "./CommentSection";
 import Avatar from "./Avatar";
+import EditRequestModal from "./EditRequestModal";
+import { deleteRequest } from "@/app/actions";
+import { useRouter } from "next/navigation";
 
 export type DetailRequest = {
   id: string;
@@ -26,13 +30,31 @@ export default function RequestDetail({
   request,
   comments,
   isOwner,
-  isLoggedIn
+  isAuthor,
+  canEditByAuthor,
+  isLoggedIn,
+  backHref
 }: {
   request: DetailRequest;
   comments: CommentItem[];
   isOwner: boolean;
+  isAuthor: boolean;
+  canEditByAuthor: boolean;
   isLoggedIn: boolean;
+  backHref: string;
 }) {
+  const router = useRouter();
+  const [editOpen, setEditOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  function onAuthorDelete() {
+    if (!confirm("Delete your request?")) return;
+    startTransition(async () => {
+      await deleteRequest(request.id);
+      router.push(backHref);
+    });
+  }
+
   return (
     <article className="card overflow-hidden">
       <div className="aspect-video w-full bg-black">
@@ -51,7 +73,7 @@ export default function RequestDetail({
             <div className="text-sm text-muted">{request.artist}</div>
             <h1 className="mt-0.5 text-xl font-bold sm:text-2xl">{request.title}</h1>
             <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted">
-              <span>dodał</span>
+              <span>by</span>
               {request.author ? (
                 <Link
                   href={`/u/${request.author.slug}`}
@@ -82,7 +104,7 @@ export default function RequestDetail({
               rel="noopener noreferrer"
               className="btn !text-xs"
             >
-              Otwórz na YT ↗
+              Open on YT ↗
             </a>
           </div>
         </div>
@@ -100,7 +122,7 @@ export default function RequestDetail({
             rel="noopener noreferrer"
             className="mt-4 inline-flex items-center gap-2 rounded-lg border border-green-500/40 bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-300 hover:bg-green-500/20"
           >
-            ✓ Zrealizowano — zobacz reakcję
+            ✓ Done — watch the reaction
           </a>
         )}
 
@@ -113,8 +135,37 @@ export default function RequestDetail({
           </div>
         )}
 
+        {isAuthor && !isOwner && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {canEditByAuthor && (
+              <button
+                type="button"
+                onClick={() => setEditOpen(true)}
+                className="btn !py-1 !text-xs"
+              >
+                Edit request
+              </button>
+            )}
+            {canEditByAuthor && (
+              <button
+                type="button"
+                onClick={onAuthorDelete}
+                disabled={pending}
+                className="btn !py-1 !text-xs text-red-300 hover:!border-red-400"
+              >
+                Delete
+              </button>
+            )}
+            {!canEditByAuthor && (
+              <p className="text-xs text-muted">
+                Editing is locked once your request gets a vote or is marked as done.
+              </p>
+            )}
+          </div>
+        )}
+
         <h2 className="mt-6 mb-1 text-sm font-semibold uppercase tracking-wide text-muted">
-          Komentarze ({comments.length})
+          Comments ({comments.length})
         </h2>
         <CommentSection
           requestId={request.id}
@@ -122,6 +173,17 @@ export default function RequestDetail({
           canComment={isLoggedIn}
         />
       </div>
+
+      <EditRequestModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        request={{
+          id: request.id,
+          artist: request.artist,
+          title: request.title,
+          comment: request.comment
+        }}
+      />
     </article>
   );
 }
