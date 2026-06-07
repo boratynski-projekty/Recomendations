@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 
 const linkStyle: React.CSSProperties = {
@@ -15,12 +16,15 @@ const linkStyle: React.CSSProperties = {
   textDecoration: "none"
 };
 
-const arrowStyle: React.CSSProperties = {
-  color: "#9ca3af"
-};
+const arrowStyle: React.CSSProperties = { color: "#9ca3af" };
 
 export default function MobileMenu({ profileSlug }: { profileSlug: string | null }) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -36,6 +40,113 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
   function close() {
     setOpen(false);
   }
+
+  const dialog = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100vw",
+        height: "100vh",
+        zIndex: 9999,
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: "#0b0b10",
+        backdropFilter: "none"
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottom: "1px solid #24242f",
+          backgroundColor: "#15151d",
+          padding: "12px 16px",
+          flex: "0 0 auto"
+        }}
+      >
+        <span className="text-lg font-bold tracking-tight">
+          <span className="text-accent">REQUEST</span>ube
+        </span>
+        <button
+          type="button"
+          onClick={close}
+          aria-label="Close menu"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: 36,
+            width: 36,
+            border: "1px solid #24242f",
+            borderRadius: 8,
+            color: "#fff",
+            fontSize: 20,
+            backgroundColor: "transparent"
+          }}
+        >
+          ✕
+        </button>
+      </div>
+
+      <nav
+        style={{
+          display: "flex",
+          flex: "1 1 auto",
+          flexDirection: "column",
+          backgroundColor: "#0b0b10",
+          overflowY: "auto"
+        }}
+      >
+        <Link href="/dashboard" onClick={close} style={linkStyle}>
+          <span>My lists</span>
+          <span style={arrowStyle}>→</span>
+        </Link>
+        <Link href="/my-requests" onClick={close} style={linkStyle}>
+          <span>My requests</span>
+          <span style={arrowStyle}>→</span>
+        </Link>
+        {profileSlug && (
+          <Link href={`/u/${profileSlug}`} onClick={close} style={linkStyle}>
+            <span>My profile</span>
+            <span style={arrowStyle}>→</span>
+          </Link>
+        )}
+        <Link href="/settings" onClick={close} style={linkStyle}>
+          <span>Settings</span>
+          <span style={arrowStyle}>→</span>
+        </Link>
+        <Link href="/contact" onClick={close} style={linkStyle}>
+          <span>Contact</span>
+          <span style={arrowStyle}>→</span>
+        </Link>
+      </nav>
+
+      <div
+        style={{
+          borderTop: "1px solid #24242f",
+          backgroundColor: "#15151d",
+          padding: 20,
+          flex: "0 0 auto"
+        }}
+      >
+        <form action="/auth/signout" method="post">
+          <button
+            type="submit"
+            className="btn w-full justify-center !py-3 !text-base"
+          >
+            Sign out
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -80,105 +191,7 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
         }
       `}</style>
 
-      {open && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 60,
-            display: "flex",
-            flexDirection: "column",
-            backgroundColor: "#0b0b10",
-            backdropFilter: "none"
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              borderBottom: "1px solid #24242f",
-              backgroundColor: "#15151d",
-              padding: "12px 16px"
-            }}
-          >
-            <span className="text-lg font-bold tracking-tight">
-              <span className="text-accent">REQUEST</span>ube
-            </span>
-            <button
-              type="button"
-              onClick={close}
-              aria-label="Close menu"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: 36,
-                width: 36,
-                border: "1px solid #24242f",
-                borderRadius: 8,
-                color: "#fff",
-                fontSize: 20,
-                backgroundColor: "transparent"
-              }}
-            >
-              ✕
-            </button>
-          </div>
-
-          <nav
-            style={{
-              display: "flex",
-              flex: 1,
-              flexDirection: "column",
-              backgroundColor: "#0b0b10",
-              overflowY: "auto"
-            }}
-          >
-            <Link href="/dashboard" onClick={close} style={linkStyle}>
-              <span>My lists</span>
-              <span style={arrowStyle}>→</span>
-            </Link>
-            <Link href="/my-requests" onClick={close} style={linkStyle}>
-              <span>My requests</span>
-              <span style={arrowStyle}>→</span>
-            </Link>
-            {profileSlug && (
-              <Link href={`/u/${profileSlug}`} onClick={close} style={linkStyle}>
-                <span>My profile</span>
-                <span style={arrowStyle}>→</span>
-              </Link>
-            )}
-            <Link href="/settings" onClick={close} style={linkStyle}>
-              <span>Settings</span>
-              <span style={arrowStyle}>→</span>
-            </Link>
-            <Link href="/contact" onClick={close} style={linkStyle}>
-              <span>Contact</span>
-              <span style={arrowStyle}>→</span>
-            </Link>
-          </nav>
-
-          <div
-            style={{
-              borderTop: "1px solid #24242f",
-              backgroundColor: "#15151d",
-              padding: 20
-            }}
-          >
-            <form action="/auth/signout" method="post">
-              <button
-                type="submit"
-                className="btn w-full justify-center !py-3 !text-base"
-              >
-                Sign out
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+      {open && mounted && createPortal(dialog, document.body)}
     </>
   );
 }
