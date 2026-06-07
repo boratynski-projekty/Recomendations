@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition, useRef } from "react";
 import { createPortal } from "react-dom";
-import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 
 const linkStyle: React.CSSProperties = {
   display: "flex",
@@ -13,14 +13,46 @@ const linkStyle: React.CSSProperties = {
   fontSize: 18,
   color: "#fff",
   backgroundColor: "#0b0b10",
-  textDecoration: "none"
+  textDecoration: "none",
+  cursor: "pointer"
 };
 
 const arrowStyle: React.CSSProperties = { color: "#9ca3af" };
 
+const disabledLinkStyle: React.CSSProperties = {
+  ...linkStyle,
+  opacity: 0.45,
+  pointerEvents: "none"
+};
+
+function Spinner() {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        display: "inline-block",
+        width: 16,
+        height: 16,
+        border: "2px solid #4b4b58",
+        borderTopColor: "#a78bfa",
+        borderRadius: "50%",
+        animation: "rmMenuSpin 0.7s linear infinite"
+      }}
+    />
+  );
+}
+
+type MenuLink = { href: string; label: string };
+
 export default function MobileMenu({ profileSlug }: { profileSlug: string | null }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [navHref, setNavHref] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const wasPending = useRef(false);
+
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -37,9 +69,43 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
     };
   }, [open]);
 
+  // Zamknij menu dopiero gdy transition się skończy (tj. po pełnym RSC fetchu)
+  useEffect(() => {
+    if (wasPending.current && !pending) {
+      setOpen(false);
+      setNavHref(null);
+    }
+    wasPending.current = pending;
+  }, [pending]);
+
+  // Safety net: jak pathname się zmienił z innego powodu (np. swipe back), zamknij
+  useEffect(() => {
+    setOpen(false);
+    setNavHref(null);
+  }, [pathname]);
+
   function close() {
     setOpen(false);
   }
+
+  function go(href: string) {
+    if (pathname === href) {
+      setOpen(false);
+      return;
+    }
+    setNavHref(href);
+    startTransition(() => {
+      router.push(href);
+    });
+  }
+
+  const links: MenuLink[] = [
+    { href: "/dashboard", label: "My lists" },
+    { href: "/my-requests", label: "My requests" },
+    ...(profileSlug ? [{ href: `/u/${profileSlug}`, label: "My profile" }] : []),
+    { href: "/settings", label: "Settings" },
+    { href: "/contact", label: "Contact" }
+  ];
 
   const dialog = (
     <div
@@ -78,6 +144,7 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
           type="button"
           onClick={close}
           aria-label="Close menu"
+          disabled={pending}
           style={{
             display: "flex",
             alignItems: "center",
@@ -88,7 +155,8 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
             borderRadius: 8,
             color: "#fff",
             fontSize: 20,
-            backgroundColor: "transparent"
+            backgroundColor: "transparent",
+            opacity: pending ? 0.5 : 1
           }}
         >
           ✕
@@ -104,28 +172,25 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
           overflowY: "auto"
         }}
       >
-        <Link href="/dashboard" onClick={close} style={linkStyle}>
-          <span>My lists</span>
-          <span style={arrowStyle}>→</span>
-        </Link>
-        <Link href="/my-requests" onClick={close} style={linkStyle}>
-          <span>My requests</span>
-          <span style={arrowStyle}>→</span>
-        </Link>
-        {profileSlug && (
-          <Link href={`/u/${profileSlug}`} onClick={close} style={linkStyle}>
-            <span>My profile</span>
-            <span style={arrowStyle}>→</span>
-          </Link>
-        )}
-        <Link href="/settings" onClick={close} style={linkStyle}>
-          <span>Settings</span>
-          <span style={arrowStyle}>→</span>
-        </Link>
-        <Link href="/contact" onClick={close} style={linkStyle}>
-          <span>Contact</span>
-          <span style={arrowStyle}>→</span>
-        </Link>
+        {links.map((l) => {
+          const isActive = navHref === l.href;
+          const isDimmed = pending && !isActive;
+          return (
+            <a
+              key={l.href}
+              href={l.href}
+              onClick={(e) => {
+                e.preventDefault();
+                if (pending) return;
+                go(l.href);
+              }}
+              style={isDimmed ? disabledLinkStyle : linkStyle}
+            >
+              <span>{l.label}</span>
+              {isActive ? <Spinner /> : <span style={arrowStyle}>→</span>}
+            </a>
+          );
+        })}
       </nav>
 
       <div
@@ -139,6 +204,7 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
         <form action="/auth/signout" method="post">
           <button
             type="submit"
+            disabled={pending}
             className="btn w-full justify-center !py-3 !text-base"
           >
             Sign out
@@ -188,6 +254,9 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
         }
         @media (max-width: 639.98px) {
           .mobile-menu-trigger { display: inline-flex; }
+        }
+        @keyframes rmMenuSpin {
+          to { transform: rotate(360deg); }
         }
       `}</style>
 
