@@ -3,6 +3,22 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
+const linkStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  borderBottom: "1px solid #24242f",
+  padding: "16px 20px",
+  fontSize: 18,
+  color: "#fff",
+  backgroundColor: "#0b0b10",
+  textDecoration: "none"
+};
+
+const arrowStyle: React.CSSProperties = {
+  color: "#9ca3af"
+};
+
 export default function MobileMenu({ profileSlug }: { profileSlug: string | null }) {
   const [open, setOpen] = useState(false);
 
@@ -23,7 +39,6 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
 
   return (
     <>
-      {/* Hamburger — widoczny tylko poniżej 640px (mobile) */}
       <button
         type="button"
         aria-label="Open menu"
@@ -122,34 +137,28 @@ export default function MobileMenu({ profileSlug }: { profileSlug: string | null
               overflowY: "auto"
             }}
           >
-            {(
-              [
-                ["/dashboard", "My lists"],
-                ["/my-requests", "My requests"],
-                profileSlug ? [`/u/${profileSlug}`, "My profile"] : null,
-                ["/settings", "Settings"],
-                ["/contact", "Contact"]
-              ].filter(Boolean) as [string, string][]
-            ).map(([href, label]) => (
-              <Link
-                key={href}
-                href={href}
-                onClick={close}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  borderBottom: "1px solid #24242f",
-                  padding: "16px 20px",
-                  fontSize: 18,
-                  color: "#fff",
-                  backgroundColor: "#0b0b10"
-                }}
-              >
-                <span>{label}</span>
-                <span style={{ color: "#9ca3af" }}>→</span>
+            <Link href="/dashboard" onClick={close} style={linkStyle}>
+              <span>My lists</span>
+              <span style={arrowStyle}>→</span>
+            </Link>
+            <Link href="/my-requests" onClick={close} style={linkStyle}>
+              <span>My requests</span>
+              <span style={arrowStyle}>→</span>
+            </Link>
+            {profileSlug && (
+              <Link href={`/u/${profileSlug}`} onClick={close} style={linkStyle}>
+                <span>My profile</span>
+                <span style={arrowStyle}>→</span>
               </Link>
-            ))}
+            )}
+            <Link href="/settings" onClick={close} style={linkStyle}>
+              <span>Settings</span>
+              <span style={arrowStyle}>→</span>
+            </Link>
+            <Link href="/contact" onClick={close} style={linkStyle}>
+              <span>Contact</span>
+              <span style={arrowStyle}>→</span>
+            </Link>
           </nav>
 
           <div
